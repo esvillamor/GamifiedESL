@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Gamified ESL</title>
+  <link rel="icon" type="image/png" href="icons/favicon-32.png">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css">
+  <meta name="theme-color" content="#000000">
+</head>
+<body>
+
+  <button id="install-button" class="install-btn" style="display: none;">Install App</button>
+
+  <div class="top-tabs">
+    <button class="top-tab active" onclick="selectTopTab(event, 'tab1')">Unit 1</button>
+    <button class="top-tab" onclick="selectTopTab(event, 'tab2')">Unit 2</button>
+  </div>
+
+  <div class="main-container">
+    
+    <div class="left-sidebar">
+      
+      <div id="menu-tab1" class="left-menu active">
+        <button class="menu-item active" onclick="selectContent(event, 'content-video1')">Alphabet Train</button>
+        <button class="menu-item" onclick="selectContent(event, 'content-video2')">Numbers 1-10</button>
+      </div>
+
+      <div id="menu-tab2" class="left-menu">
+        <button class="menu-item" onclick="selectContent(event, 'content-video3')">Colors</button>
+        <button class="menu-item" onclick="selectContent(event, 'content-video4')">Animals</button>
+      </div>
+      
+    </div>
+
+    <div class="content-area">
+      
+      <div id="content-video1" class="content-panel active">
+        <video controls playsinline>
+          <source src="video.mp4" type="video/mp4">
+          Your browser does not support the video tag.
+        </video>
+      </div>
+      <div id="content-video2" class="content-panel">
+        <video controls playsinline>
+          <source src="video2.mp4" type="video/mp4">
+          Your browser does not support the video tag.
+        </video>
+      </div>
+
+      <div id="content-video3" class="content-panel">
+        <video controls playsinline>
+          <source src="video3.mp4" type="video/mp4">
+          Your browser does not support the video tag.
+        </video>
+      </div>
+      <div id="content-video4" class="content-panel">
+        <video controls playsinline>
+          <source src="video4.mp4" type="video/mp4">
+          Your browser does not support the video tag.
+        </video>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // --- UI Navigation Logic ---
+    function selectTopTab(event, tabId) {
+      document.querySelectorAll('.top-tab').forEach(el => el.classList.remove('active'));
+      event.currentTarget.classList.add('active');
+
+      document.querySelectorAll('.left-menu').forEach(el => el.classList.remove('active'));
+      const activeMenu = document.getElementById('menu-' + tabId);
+      activeMenu.classList.add('active');
+
+      // Automatically click the first menu item in the newly activated left menu
+      const firstMenuItem = activeMenu.querySelector('.menu-item');
+      if (firstMenuItem) {
+        firstMenuItem.click();
+      }
+    }
+
+    function selectContent(event, contentId) {
+      document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
+      event.currentTarget.classList.add('active');
+
+      document.querySelectorAll('.content-panel').forEach(el => el.classList.remove('active'));
+      document.getElementById(contentId).classList.add('active');
+      
+      // Pause all videos when switching menus so they don't play in the background
+      document.querySelectorAll('video').forEach(vid => vid.pause());
+    }
+
+    // --- PWA Logic ---
+    // 1. Service Worker Registration
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+          .then(registration => {
+            console.log('Service Worker registered successfully with scope:', registration.scope);
+          })
+          .catch(error => {
+            console.error('Service Worker registration failed:', error);
+          });
+      });
+    }
+
+    // 2. Handle PWA Install Prompt
+    let deferredPrompt;
+    const installButton = document.getElementById('install-button');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      // Prevent Chrome 67 and earlier from automatically showing the prompt
+      e.preventDefault();
+      // Stash the event so it can be triggered later.
+      deferredPrompt = e;
+      // Show the custom install button
+      installButton.style.display = 'block';
+    });
+
+    installButton.addEventListener('click', async () => {
+      if (deferredPrompt) {
+        // Show the install prompt
+        deferredPrompt.prompt();
+        // Wait for the user to respond to the prompt
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+          console.log('User accepted the install prompt');
+        } else {
+          console.log('User dismissed the install prompt');
+        }
+        // We've used the prompt, and can't use it again, throw it away
+        deferredPrompt = null;
+        installButton.style.display = 'none';
+      }
+    });
+
+    // Hide the button if the app is already successfully installed
+    window.addEventListener('appinstalled', () => {
+      installButton.style.display = 'none';
+      console.log('PWA was installed successfully');
+    });
+  </script>
+</body>
+</html>
